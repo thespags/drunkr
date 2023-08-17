@@ -1,0 +1,17 @@
+# Eclipse files
+.settings/
+.project
+.factorypath
+.classpath
+
+# IntelliJ files
+.idea
+*.iml
+
+# Output files
+target/
+.travis/
+test-output/
+logs/
+bin/
+/.apt_generated/

@@ -1,0 +1,46 @@
+package net.spals.drunkr.api.command;
+
+/**
+ * Enums for dependency injection on drunkr operations.
+ *
+ * @author spags
+ */
+public enum CommandType {
+
+    CHECKIN_ADD,
+    CHECKIN_FIND,
+    CHECKIN_FIND_ALL,
+    CHECKIN_REMOVE,
+    CHECKIN_REMOVE_ALL,
+    CHECKIN_UPDATE,
+    FOLLOWING_ADD,
+    FOLLOWING_LIST,
+    FOLLOWING_REMOVE,
+    FOLLOWER_INVITE,
+    FOLLOWER_LIST,
+    FOLLOWER_REMOVE,
+    INVALID,
+    JOB_CHECK,
+    JOB_FIND,
+    JOB_FIND_ALL,
+    JOB_START,
+    JOB_STOP,
+    LINK_UNTAPPD,
+    LINK_PHONE_REQUEST,
+    LINK_PHONE_AUTH,
+    NOTIFICATION_ADD,
+    NOTIFICATION_FIND,
+    NOTIFICATION_FIND_ALL,
+    NOTIFICATION_READ_ALL,
+    NOTIFICATION_UPDATE,
+    UNTAPPD_AUTH,
+    USER_ADD,
+    USER_AUTH_REQUEST,
+    USER_AUTH,
+    USER_CHECK_BAC,
+    USER_FIND,
+    USER_FIND_ALL,
+    USER_INVITE,
+    USER_LEADERS,
+    USER_UPDATE
+}

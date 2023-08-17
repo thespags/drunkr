@@ -1,0 +1,76 @@
+package net.spals.drunkr.api;
+
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.spals.appbuilder.annotations.service.AutoBindSingleton;
+import net.spals.drunkr.api.command.ApiCommand;
+import net.spals.drunkr.api.command.CommandType;
+import net.spals.drunkr.model.Person;
+
+/**
+ * API for follow actions.
+ *
+ * @author spags
+ */
+@AutoBindSingleton
+@Path("users/{userIdNameOrPhone}/following")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class FollowingResource {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UsersResource.class);
+    private final Map<CommandType, ApiCommand> commands;
+
+    @Inject
+    FollowingResource(final Map<CommandType, ApiCommand> commands) {
+        this.commands = commands;
+    }
+
+    @GET
+    public Response allFollowing(
+        @PathParam("userIdNameOrPhone") final Person user
+    ) {
+        LOGGER.info("GET: allFollowing for user: " + user.id());
+        final Map<String, Object> request = ImmutableMap.<String, Object>builder()
+            .put("user", user)
+            .build();
+        return commands.get(CommandType.FOLLOWING_LIST).run(request);
+    }
+
+    @POST
+    public Response addFollowing(
+        @PathParam("userIdNameOrPhone") final Person user,
+        @NotNull final Map<String, Object> payload
+    ) {
+        LOGGER.info("POST: addFollowing for user: " + user.id() + " with payload: " + payload);
+        final Map<String, Object> request = ImmutableMap.<String, Object>builder()
+            .put("user", user)
+            .putAll(payload)
+            .build();
+        return commands.get(CommandType.FOLLOWING_ADD).run(request);
+    }
+
+    @DELETE
+    @Path("{targetUserIdNameOrPhone}")
+    public Response removeFollowing(
+        @PathParam("userIdNameOrPhone") final Person user,
+        @PathParam("targetUserIdNameOrPhone") final Person targetUser
+    ) {
+        LOGGER.info("DELETE: removeFollowing for user: " + user.id() + " with target user: " + targetUser.id());
+        final Map<String, Object> request = ImmutableMap.<String, Object>builder()
+            .put("user", user)
+            .put("targetUser", targetUser)
+            .build();
+        return commands.get(CommandType.FOLLOWING_REMOVE).run(request);
+    }
+}

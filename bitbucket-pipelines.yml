@@ -1,0 +1,36 @@
+# This is a sample build configuration for Java (Maven).
+# Check our guides at https://confluence.atlassian.com/x/zd-5Mw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: maven:3.3.9
+
+clone:
+  depth: full
+
+pipelines:
+  default:
+    - step:
+        deployment: test
+        caches:
+          - maven
+        script:
+          # -B batch mode makes Maven less verbose
+          # -P -run-docker-services skips the run-docker-services profile as these are provided by the pipeline
+          - mvn -B -P -run-docker-services verify
+        services: 
+          - mongo
+          - chromedriver
+  branches:
+    master:
+      - step:
+          deployment: production
+          script:
+            - git push -f https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git HEAD
+
+definitions: 
+  services: 
+    mongo: 
+      image: mongo:3.5
+    chromedriver:
+      image: robcherry/docker-chromedriver

@@ -1,0 +1,320 @@
+#%RAML 1.0
+---
+title: Drunkr API
+baseUri: https://spals-drunkr.herokuapp.com
+version: v1
+types:
+  User:
+    description: |
+      A drunkr user
+    type: object
+    properties:
+      _id: string
+      username: string
+      gender:
+        description: Gender of the user { MALE | FEMALE }
+      weight: number
+      messengerId:
+        type: string
+        required: false
+      phoneNumber:
+        type: string
+        required: false
+        description: A E.164 formatted phone number
+    example: |
+      {
+        "_id": "5a9227212caa477e5ac332c9",
+        "username": "jbrock",
+        "weight": 185.0,
+        "gender": "MALE",
+        "phoneNumber": "+17171234567",
+        "messengerId": "facebookId"
+      }
+  Checkin:
+    description: |
+      A drink by the user
+    type: object
+    properties:
+      _id: string
+      userId: string
+      producer:
+        type: string
+        required: false
+      rating:
+        type: number
+        required: false
+        description: Integer representation 100 to 500 representing how much the user liked the drink
+      abv:
+        type: number
+        description: Double value representing the alcohol by volume of the drink
+      size:
+        type: number
+        description: Double value representing the size of the drink in ounecs
+      style: string
+  BAC:
+    description: |
+      A calculation of Blood Alcohol Content (BAC)
+    type: object
+    properties:
+      _id: string
+      userId: string
+      bac: number
+      timestamp: datetime
+    example: |
+      {
+        "_id": "5a9227212caa477e5ac332c9",
+        "userId": "5a9227212caa477e5ac332c9",
+        "bac": 0.08,
+        "timestamp": "2017-12-25T16:17:29.000Z"
+      }
+  Follower:
+    description: |
+      A user to defin a relationship against given another user
+    properties:
+      targetUserId: string
+    example: |
+      { "targetUserId": "5a9227212caa477e5ac332c9" }
+  Job:
+    description: |
+      A drunkr task to calculate Blood Alcohol Content (BAC) for a user, will run until sober or stopTime whichever is earliest.
+    properties:
+      _id: string
+      startTime: datetime
+      stopTime?:
+        type: datetime
+        description: Datetime for when the job is stopped, if not provided will run until sober.
+      source:
+        type: string
+        description: Source for where push notifications are sent
+      period:
+        type: number
+        description: Elapsed time in seconds between each BAC calculation.
+    example: |
+      {
+        "_id": "5a9227212caa477e5ac332c9",
+        "startTime": "2017-12-25T16:17:29.000Z",
+        "stopTime": "2017-12-25T20:17:29.000Z",
+        "source": "SMS",
+        "period": 12000
+      }
+traits:
+  ValidUsers:
+    responses:
+      200:
+        body:
+          application/json:
+            type: User[]
+  ValidUser:
+    responses:
+      200:
+        body:
+          application/json:
+            type: User
+  InvalidUser:
+    responses:
+      404:
+        description: |
+          The user is not found
+        body:
+          application/json:
+            properties:
+              message: string
+            example: |
+              { "message": "No existing user with name: {userId}" }
+  InternalServerError:
+    responses:
+      500:
+        description: |
+          The operation could not be completed within the system
+        body:
+          application/json:
+            properties:
+              message: string
+  Relationship:
+    responses:
+      200:
+        description: |
+          Two users where one user is following another user
+        body:
+          application/json:
+            properties:
+              followee: User
+              follower: User
+/users:
+  get:
+    is: [ ValidUsers ]
+    description: |
+      List all users
+  post:
+    is: [ ValidUser ]
+    description: |
+      Create a user with the given attributes (id is not required)
+    body:
+      application/json:
+        type: User
+  /{userId}:
+    get:
+      is: [ ValidUser, InvalidUser ]
+      description: |
+        Retreive the user with the given id
+    patch:
+      is: [ ValidUser, InvalidUser ]
+      description: |
+        Update the user with the provided user payload
+      body:
+        application/json:
+          type: User
+    /bac:
+      get:
+        description: |
+          Retreive all BAC calculations for the user within the given time range
+        queryParameters:
+          from?:
+            displayName: From Timestamp
+            type: datetime
+            description: start range inclusive to get BAC's
+            example: 2017-12-25T16:17:29.000Z
+            required: false
+          to?:
+            displayName: To Timestamp
+            type: datetime
+            description: end range inclusive to get BAC's
+            example: 2017-12-25T16:17:29.000Z
+            required: false
+        responses:
+          200:
+            body:
+              application/json:
+                type: BAC[]
+    /followers:
+      get:
+        is: [ ValidUsers ]
+        description: |
+          List all of the followers for the given user
+      post:
+        is: [ InvalidUser, Relationship ]
+        description: |
+          Invite a user to follow you
+        body:
+          application/json:
+            type: Follower
+      /{targerUserId}:
+        delete:
+          is: [ ValidUser, InvalidUser, InternalServerError ]
+          description: |
+            Remove the user following you
+    /following:
+      get:
+        is: [ ValidUsers ]
+        description: |
+          List all the users that the given user is following
+      post:
+        is: [ InvalidUser, Relationship ]
+        description: |
+          Add a user to follow for the given user.
+        body:
+          application/json:
+            type: Follower
+      /{targerUserId}:
+        delete:
+          is: [ ValidUser, InvalidUser, InternalServerError ]
+          description: |
+            Remove a user that the given user is following
+    /checkins:
+      get:
+        description: |
+          Get all checkins for the given user
+        responses:
+          200:
+            body:
+              application/json:
+                type: Checkin[]
+      post:
+        description: |
+          Add a checking for the given user
+        responses:
+          200:
+            body:
+              application/json:
+                type: Checkin
+      delete:
+        description: |
+          Remove all checkins for the given user
+        responses:
+          200:
+            body:
+              application/json:
+                type: Checkin[]
+      /{checkinId}:
+        get:
+          description: |
+            Get the given checkin
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Checkin[]
+        patch:
+          description: |
+            Update the given checkin with the provided checkin payload
+          body:
+            application/json:
+              type: Checkin
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Checkin
+        delete:
+          description: |
+            Delete the given checkin
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Checkin
+    /jobs:
+      get:
+        description: |
+         Get all jobs for the user
+        responses:
+          200:
+            body:
+              application/json:
+                type: Job[]
+      post:
+        description: |
+          Create a job for the user
+        body:
+          application/json:
+            type: Job
+        responses:
+          200:
+            body:
+              application/json:
+                type: Job
+      /{jobId}:
+        get:
+          description: |
+            Get the job for the given id
+          body:
+            application/json:
+              properties:
+                jobId: string
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Job
+        delete:
+          description: |
+            Delete the job for the given id
+          body:
+            application/json:
+              properties:
+                jobId: string
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Job
